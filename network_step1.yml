@@ -4,7 +4,7 @@ Resources:
   sbcntrVpc:
     Type: AWS::EC2::VPC
     Properties:
-      CiderBlock: 10.0.0.0/16
+      CidrBlock: 10.0.0.0/16
       EnableDnsHostnames: true
       EnableDnsSupport: true
       InstanceTenancy: default
@@ -16,23 +16,23 @@ Resources:
   sbcntrSubnetPrivateContainer1A:
     Type: AWS::EC2::Subnet
     Properties:
-      CiderBlock: 10.0.8.0/24
+      CidrBlock: 10.0.8.0/24
       VpcId:
         Ref: sbcntrVpc
       AvailabilityZone:
         Fn::Select:
           - 0
           - Fn::GetAZs: ""
-        MapPublicIpOnLaunch: false
-        Tags:
-          - Key: Name
-            Value: sbcntr-subnet-private-container-1a
-          - Key: Type
-            Value: Isolated
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: sbcntr-subnet-private-container-1a
+        - Key: Type
+          Value: Isolated
   sbcntrSubnetPrivateContainer1C:
     Type: AWS::EC2::Subnet
     Properties:
-      CiderBlock: 10.0.9.0/24
+      CidrBlock: 10.0.9.0/24
       VpcId:
         Ref: sbcntrVpc
       AvailabilityZone:
@@ -75,7 +75,7 @@ Resources:
   sbcntrSubnetPrivateDb1A:
     Type: AWS::EC2::Subnet
     Properties:
-      CiderBlock: 10.0.16.0/24
+      CidrBlock: 10.0.16.0/24
       VpcId:
         Ref: sbcntrVpc
       AvailabilityZone:
@@ -91,7 +91,7 @@ Resources:
   sbcntrSubnetPrivateDb1C:
     Type: AWS::EC2::Subnet
     Properties:
-      CiderBlock: 10.0.17.0/24
+      CidrBlock: 10.0.17.0/24
       VpcId:
         Ref: sbcntrVpc
       AvailabilityZone:
@@ -134,7 +134,7 @@ Resources:
   sbcntrSubnetPublicIngress1A:
     Type: AWS::EC2::Subnet
     Properties:
-      CiderBlock: 10.0.0.0/24
+      CidrBlock: 10.0.0.0/24
       VpcId:
         Ref: sbcntrVpc
       AvailabilityZone:
@@ -150,7 +150,7 @@ Resources:
   sbcntrSubnetPublicIngress1C:
     Type: AWS::EC2::Subnet
     Properties:
-      CiderBlock: 10.0.16.0/24
+      CidrBlock: 10.0.1.0/24
       VpcId:
         Ref: sbcntrVpc
       AvailabilityZone:
@@ -196,15 +196,15 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId:
         Ref: sbcntrIgw
-      DependsOn:
-        - sbcntrVpcgwAttachment
-      
-  # 管理用サーバー
+    DependsOn:
+      - sbcntrVpcgwAttachment
+
+  # 管理用サーバ周りの設定
   ## 管理用のパブリックサブネット
   sbcntrSubnetPublicManagement1A:
     Type: AWS::EC2::Subnet
     Properties:
-      CiderBlock: 10.0.240.0/24
+      CidrBlock: 10.0.240.0/24
       VpcId:
         Ref: sbcntrVpc
       AvailabilityZone:
@@ -220,7 +220,7 @@ Resources:
   sbcntrSubnetPublicManagement1C:
     Type: AWS::EC2::Subnet
     Properties:
-      CiderBlock: 10.0.241.0/24
+      CidrBlock: 10.0.241.0/24
       VpcId:
         Ref: sbcntrVpc
       AvailabilityZone:
@@ -233,15 +233,15 @@ Resources:
           Value: sbcntr-subnet-public-management-1c
         - Key: Type
           Value: Public
-  ## 管理用ルートの紐づけ(Ingressのルートテーブルを使用)
-  sbccntrRouteManagementAssociation1A:
+  ## 管理用サブネットのルートはIngressと同様として作成する
+  sbcntrRouteManagementAssociation1A:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId:
         Ref: sbcntrRouteIngress
       SubnetId:
         Ref: sbcntrSubnetPublicManagement1A
-  sbccntrRouteManagementAssociation1C:
+  sbcntrRouteManagementAssociation1C:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId:
@@ -269,8 +269,8 @@ Resources:
   sbcntrSgIngress:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security Group for Ingress
-      GroupName: Ingress
+      GroupDescription: Security group for ingress
+      GroupName: ingress
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           Description: Allow all outbound traffic by default
@@ -291,173 +291,190 @@ Resources:
           Value: sbcntr-sg-ingress
       VpcId:
         Ref: sbcntrVpc
-    ## 管理者用サーバー向けのセキュリティグループ
-    sbcntrSgManagement:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-        GroupDescription: Security Group of management server
-        GroupName: management
-        SecurityGroupEgress:
-          - CidrIp: 0.0.0.0/0
-            Description: Allow all outbound traffic by default
-            IpProtocol: "-1"
-        Tags:
-          - Key: Name
-            Value: sbcntr-sg-management
-        VpcId:
-          Ref: sbcntrVpc
-    ## バックエンドコンテナアプリ用セキュリティグループ
-    sbcntrSgContainer:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-        GroupDescription: Security Groupt of backend app
-        GroupName: container
-        SecurityGroupEgress:
-          - CidrIp: 0.0.0.0/0
-            Description: Allow all outbound traffic by default
-            IpProtocol: "-1"
-        Tags:
-          - Key: Name
-            Value: sbcntr-sg-container
-        VpcId:
-          Ref: sbcntrVpc
-    ## フロントエンドコンテナアプリ用セキュリティグループ
-    sbcntrSgFrontContainer:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-        GroupDescription: Sercurity Group of front container app
-        GroupName: front-container
-        SecurityGroupEgress:
-          - CidrIp: 0.0.0.0/0
-            Description: Allow all outbound traffic by default
-            IpProtocol: "-1"
-        Tags:
-          - Key: Name
-            Value: sbcntr-sg-front-container
-        VpcId:
-          Ref: sbcntrVpc
-    ## 内部用ロードバランサ用セキュリティグループ
-    sbcntrSgInternal:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-        GroupDescription: Security Group for internal load balancer
-        GroupName: internal
-        SecurityGroupEgress:
-          - CidrIp: 0.0.0.0/0
-            Description: Allow all outbound traffic by default
-            IpProtocol: "-1"
-        Tags:
-          - Key: Name
-            Value: sbcntr-sg-internal
-        VpcId:
-          Ref: sbcntrVpc
-    sbcntrSgDb:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-        GroupDescription: Security Group of database
-        GroupName: database
-        SecurityGroupEgress:
-          - CidrIp: 0.0.0.0/0
-            Description: Allow all outbound traffic by default
-            IpProtocol: "-1"
-        Tags:
-          - Key: Name
-            Value: sbcntr-sg-db
-        VpcId:
-          Ref: sbcntrVpc
-    # ルール紐づけ
-    ## Internet LB → Back Container
-    sbcntrSgFrontContainerFromSgIngress:
-      Type: AWS::EC2::SecurityGroupIngress
-      Properties:
-        IpProtocol: tcp
-        Description: HTTP for Ingress
-        FromPort: 80
-        GroupId:
-          Fn::GetAtt:
-            - sbcntrSgFrontContainer
-            - GroupId
-        SourceSecurityGroupId:
-          Fn::GetAtt:
-            - sbcntrSgIngress
-            - GroupId
-        ToPort: 80
-    ## Front Container → Internal LB
-    sbcntrSgInternalFromSgFrontContainer:
-      Type: AWS::EC2::SecurityGroupIngress
-      Properties:
-        IpProtocol: tcp
-        Description: HTTP for front container
-        FromPort: 80
-        GroupId:
-          Fn::GetAtt:
-            - sbcntrSgInternal
-            - GroupId
-        SourceSecurityGroupId:
-          Fn::GetAtt:
-            - sbcntrSgFrontContainer
-            - GroupId
-        ToPort: 80
-    ## Internal LB → Back Container
-    sbcntrSgContainerFromSgInternal:
-      Type: AWS::EC2::SecurityGroupIngress
-      Properties:
-        IpProtocol: tcp
-        Description: HTTP for internal LB
-        FromPort: 80
-        GroupId:
-          Fn::GetAtt:
-            - sbcntrSgContainer
-            - GroupId
-        SourceSecurityGroupId:
-          Fn::GetAtt:
-            - sbcntrSgInternal
-            - GroupId
-        ToPort: 80
-    ## Back Contaner → DB
-    sbcntrSgDbFromSgContainer:
-      Type: AWS::EC2::SecurityGroupIngress
-      Properties:
-        IpProtocol: tcp
-        Description: MySQL protocol from backend app
-        FromPort: 3306
-        GroupId:
-          Fn::GetAtt:
-            - sbcntrSgDb
-            - GroupId
-        SourceSecurityGroupId:
-          Fn::GetAtt:
-            - sbcntrSgContainer
-            - GroupId
-        ToPort: 3306
-    ## Front Container → DB
-    sbcntrSgDbFromSgFrontContainerTCP:
-      Type: AWS::EC2::SecurityGroupIngress
-      Properties:
-        IpProtocol: tcp
-        Description: MySQL protocol from frontend App
-        FromPort: 3306
-        GroupId:
-          Fn::GetAtt:
-            - sbcntrSgDb
-            - GroupId
-        SourceSecurityGroupId:
-          Fn::GetAtt:
-            - sbcntrSgFrontContainer
-            - GroupId
-        ToPort: 3306
-    ## Management server → DB
-    sbcntrSgInternalFromSgManagementTCP:
-      Type: AWS::EC2::SecurityGroupIngress
-      Properties:
-        IpProtocol: tcp
-        Description: HTTP for management server
-        FromPort: 80
-        GroupId:
+  ## 管理用サーバ向けのセキュリティグループの生成
+  sbcntrSgManagement:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group of management server
+      GroupName: management
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: Name
+          Value: sbcntr-sg-management
+      VpcId:
+        Ref: sbcntrVpc
+  ## バックエンドコンテナアプリ用セキュリティグループの生成
+  sbcntrSgContainer:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group of backend app
+      GroupName: container
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: Name
+          Value: sbcntr-sg-container
+      VpcId:
+        Ref: sbcntrVpc
+  ## フロントエンドコンテナアプリ用セキュリティグループの生成
+  sbcntrSgFrontContainer:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group of front container app
+      GroupName: front-container
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: Name
+          Value: sbcntr-sg-front-container
+      VpcId:
+        Ref: sbcntrVpc
+  ## 内部用ロードバランサ用のセキュリティグループの生成
+  sbcntrSgInternal:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for internal load balancer
+      GroupName: internal
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: Name
+          Value: sbcntr-sg-internal
+      VpcId:
+        Ref: sbcntrVpc
+  ## DB用セキュリティグループの生成
+  sbcntrSgDb:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group of database
+      GroupName: database
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: Name
+          Value: sbcntr-sg-db
+      VpcId:
+        Ref: sbcntrVpc
+
+  # ルール紐付け
+  ## Internet LB -> Front Container
+  sbcntrSgFrontContainerFromsSgIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: HTTP for Ingress
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
+          - sbcntrSgFrontContainer
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - sbcntrSgIngress
+          - GroupId
+      ToPort: 80  
+  ## Front Container -> Internal LB
+  sbcntrSgInternalFromSgFrontContainer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: HTTP for front container
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
           - sbcntrSgInternal
           - GroupId
-        SourceSecurityGroupId:
-          Fn::GetAtt:
-            - sbcntrSgManagement
-            - GroupId
-        ToPort: 80
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - sbcntrSgFrontContainer
+          - GroupId
+      ToPort: 80
+  ## Internal LB -> Back Container
+  sbcntrSgContainerFromSgInternal:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: HTTP for internal lb
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
+          - sbcntrSgContainer
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - sbcntrSgInternal
+          - GroupId
+      ToPort: 80      
+  ## Back container -> DB
+  sbcntrSgDbFromSgContainerTCP:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: MySQL protocol from backend App
+      FromPort: 3306
+      GroupId:
+        Fn::GetAtt:
+          - sbcntrSgDb
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - sbcntrSgContainer
+          - GroupId
+      ToPort: 3306
+  ## Front container -> DB
+  sbcntrSgDbFromSgFrontContainerTCP:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: MySQL protocol from frontend App
+      FromPort: 3306
+      GroupId:
+        Fn::GetAtt:
+          - sbcntrSgDb
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - sbcntrSgFrontContainer
+          - GroupId
+      ToPort: 3306
+  ## Management server -> DB
+  sbcntrSgDbFromSgManagementTCP:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: MySQL protocol from management server
+      FromPort: 3306
+      GroupId:
+        Fn::GetAtt:
+          - sbcntrSgDb
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - sbcntrSgManagement
+          - GroupId
+      ToPort: 3306  
+  ## Management server -> Internal LB
+  sbcntrSgInternalFromSgManagementTCP:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: HTTP for management server
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
+          - sbcntrSgInternal
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - sbcntrS

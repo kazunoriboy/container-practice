@@ -477,4 +477,6 @@ Resources:
           - GroupId
       SourceSecurityGroupId:
         Fn::GetAtt:
-          - sbcntrS
+          - sbcntrSgManagement
+          - GroupId
+      ToPort: 80

@@ -402,6 +402,21 @@ Resources:
           Value: sbcntr-sg-db
       VpcId:
         Ref: sbcntrVpc
+  ## VPCエンドポイント用セキュリティグループの生成
+  sbcntrSgEgress:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group of VPC Endpoint
+      GroupName: egress
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: Name
+          Value: sbcntr-sg-vpce
+      VpcId:
+        Ref: sbcntrVpc
 
   # ルール紐付け
   ## Internet LB -> Front Container
